@@ -2,7 +2,7 @@
     <string name="app_name">Eazee</string>
     <string name="title_activity_account">Sections</string>
 
-    <string name="facebook_application_id" translatable="false">1917244455223130</string>
+    <string name="facebook_application_id" translatable="false">APPLICATION ID</string>
 
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
