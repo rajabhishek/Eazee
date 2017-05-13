@@ -1,5 +1,6 @@
 package com.srmgmail.anand.kr.eazee;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -13,16 +14,26 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
+import android.widget.Toast;
 
+import com.firebase.ui.auth.AuthUI;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
-public class AccountActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+public class AccountActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
+    private String mUserName;
+    private String mEmail;
+    private TextView nameTextView;
+    private TextView emailTextView;
+    public static final int RC_SIGN_IN = 1;
+   // private String mPhotoUrl;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,20 +56,38 @@ public class AccountActivity extends AppCompatActivity
 
 
         RecyclerViewAdapter adapter = new RecyclerViewAdapter(myValues);
-        RecyclerView myView =  (RecyclerView)findViewById(R.id.recyclerview);
+        RecyclerView myView = (RecyclerView) findViewById(R.id.recyclerview);
         myView.setHasFixedSize(true);
         myView.setAdapter(adapter);
         LinearLayoutManager llm = new LinearLayoutManager(this);
         llm.setOrientation(LinearLayoutManager.VERTICAL);
         myView.setLayoutManager(llm);
 
+        nameTextView = (TextView)findViewById(R.id.user_name);
+        emailTextView = (TextView)findViewById(R.id.user_email);
+
         mAuth = FirebaseAuth.getInstance();
         mAuthListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
-                if(firebaseAuth.getCurrentUser() == null){
-                    startActivity(new Intent(AccountActivity.this , MainActivity.class));
+                FirebaseUser user = mAuth.getCurrentUser();
+                if (user != null) {
+                    //user is signed in
+                    mUserName = user.getDisplayName();
+                    mEmail = user.getEmail();
+                    SignInIntialize();
                 }
+                else{
+                    //if user is signed out
+                    startActivityForResult(
+                        AuthUI.getInstance()
+                                .createSignInIntentBuilder()
+                                .setIsSmartLockEnabled(false)
+                                .setProviders(Arrays.asList(new AuthUI.IdpConfig.Builder(AuthUI.EMAIL_PROVIDER).build(),
+                                        new AuthUI.IdpConfig.Builder(AuthUI.GOOGLE_PROVIDER).build()))
+                                .build(),
+                        RC_SIGN_IN);
+
             }
         };
 
@@ -76,6 +105,21 @@ public class AccountActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         if (navigationView != null) {
             navigationView.setNavigationItemSelectedListener(this);
+        }
+    }
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode == RC_SIGN_IN){
+            if(requestCode == RESULT_OK){
+                // Sign-in succeeded, set up the UI
+                Toast.makeText(AccountActivity.this,"Signed in!",Toast.LENGTH_SHORT).show();
+            }
+            else if(requestCode == RESULT_CANCELED){
+                // Sign in was canceled by the user, finish the activity
+                Toast.makeText(AccountActivity.this,"Signed in canceled",Toast.LENGTH_SHORT).show();
+                finish();
+            }
         }
     }
 
@@ -135,7 +179,7 @@ public class AccountActivity extends AppCompatActivity
         } else if (id == R.id.nav_manage) {
 
         } else if (id == R.id.sign_out){
-            sinout();
+            singout();
         }else if (id == R.id.nav_share) {
 
         } else if (id == R.id.nav_send) {
@@ -146,8 +190,12 @@ public class AccountActivity extends AppCompatActivity
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
+    private void SignInIntialize(){
+        nameTextView.setText(mUserName);
+        emailTextView.setText(mEmail);
+    }
 
-    private void sinout() {
+    private void singout() {
         mAuth.signOut();
     }
 }
